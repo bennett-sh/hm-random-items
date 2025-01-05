@@ -2,6 +2,8 @@
 
 A Hitman 3 SDK mod that allows you to spawn a random item every 15 seconds (or whatever delay you want it to be!).
 
+## [Download](https://www.nexusmods.com/hitman3/mods/891?tab=files)
+
 ## Installation Instructions
 
 1. Download the latest version of [ZHMModSDK](https://github.com/OrfeasZ/ZHMModSDK) and install it.
