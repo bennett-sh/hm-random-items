@@ -1,4 +1,4 @@
-# RandomItems
+# Random Items
 
 A Hitman 3 SDK mod that allows you to spawn a random item every 15 seconds (or whatever delay you want it to be!).
 
