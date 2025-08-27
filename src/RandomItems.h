@@ -5,6 +5,7 @@
 #include <Glacier/SGameUpdateEvent.h>
 #include <Glacier/ZResource.h>
 #include <Glacier/ZResourceID.h>
+#include <random>
 
 class RandomItems : public IPluginInterface {
 public:
@@ -17,7 +18,6 @@ private:
     void OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent);
     void LoadRepositoryProps();
     void GiveRandomItem();
-    std::pair<const std::string, ZRepositoryID> GetRepositoryPropFromIndex(int s_Index);
     std::string ConvertDynamicObjectValueTString(const ZDynamicObject& p_DynamicObject);
 
 private:
@@ -29,7 +29,10 @@ private:
     bool m_IncludeItemsWithoutTitle = false;
     float m_HitmanItemPosition[3] = { 0, 1, 0 };
     TResourcePtr<ZTemplateEntityFactory> m_RepositoryResource;
-    std::multimap<std::string, ZRepositoryID> m_RepositoryProps;
+    std::vector<std::pair<std::string, ZRepositoryID>> m_RepositoryProps;
+
+    std::mt19937 m_RandomGenerator;
+    std::uniform_int_distribution<size_t> m_Distribution;
 };
 
 DEFINE_ZHM_PLUGIN(RandomItems)
