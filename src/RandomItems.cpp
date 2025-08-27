@@ -17,6 +17,9 @@
 void RandomItems::OnEngineInitialized() {
     Logger::Info("RandomItems has been initialized!");
 
+    std::random_device rd;
+    m_RandomGenerator = std::mt19937(rd());
+
     const ZMemberDelegate<RandomItems, void(const SGameUpdateEvent&)> s_Delegate(this, &RandomItems::OnFrameUpdate);
     Globals::GameLoopManager->RegisterFrameUpdate(s_Delegate, 1, EUpdateMode::eUpdatePlayMode);
 }
@@ -29,8 +32,7 @@ RandomItems::~RandomItems() {
 void RandomItems::OnDrawMenu() {
     if (ImGui::Button(ICON_MD_LOCAL_FIRE_DEPARTMENT " Random Items")) {
         m_ShowMessage = !m_ShowMessage;
-    }
-    
+    } 
 }
 
 void RandomItems::OnDrawUI(bool p_HasFocus) {
@@ -82,21 +84,10 @@ void RandomItems::OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent) {
     }
 }
 
-std::pair<const std::string, ZRepositoryID> RandomItems::GetRepositoryPropFromIndex(int s_Index) {
-    int s_CurrentIndex = 0;
-    for (auto it = m_RepositoryProps.begin(); it != m_RepositoryProps.end(); ++it) {
-        if (s_CurrentIndex == s_Index) {
-            return *it;
-        }
-        ++s_CurrentIndex;
-    }
-    Logger::Error("repo index out of bounds");
-    throw std::out_of_range("repo index out of bounds.");
-}
-
 void RandomItems::LoadRepositoryProps()
 {
     Logger::Info("Loading repository (your game will freeze shortly)");
+    m_RepositoryProps.clear();
 
     std::string s_IncludedCategories[] = {
         "assaultrifle", "sniperrifle", "melee", "explosives", "tool", "pistol", "shotgun", "suitcase", "smg", "distraction", "poison", "container",
@@ -167,9 +158,12 @@ void RandomItems::LoadRepositoryProps()
             }
 
             if (s_Included && (s_HasTitle || m_IncludeItemsWithoutTitle)) {
-                m_RepositoryProps.insert(std::make_pair(s_TitleToAdd, s_RepoIdToAdd));
+                m_RepositoryProps.push_back(std::make_pair(s_TitleToAdd, s_RepoIdToAdd));
             }
         }
+    }
+    if (!m_RepositoryProps.empty()) {
+        m_Distribution = std::uniform_int_distribution<size_t>(0, m_RepositoryProps.size() - 1);
     }
 }
 
@@ -185,19 +179,11 @@ std::string RandomItems::ConvertDynamicObjectValueTString(const ZDynamicObject& 
     }
     else if (strcmp(s_Type->m_pTypeName, "bool") == 0)
     {
-        if (*p_DynamicObject.As<bool>())
-        {
-            s_Result = "true";
-        }
-        else
-        {
-            s_Result = "false";
-        }
+        s_Result = *p_DynamicObject.As<bool>() ? "true" : "false";
     }
     else if (strcmp(s_Type->m_pTypeName, "float64") == 0)
     {
         double value = *p_DynamicObject.As<double>();
-
         s_Result = std::to_string(value).c_str();
     }
     else
@@ -215,11 +201,9 @@ void RandomItems::GiveRandomItem()
         Logger::Info("loading repository props (your game might freeze shortly)");
         LoadRepositoryProps();
     }
-    
-    std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-    size_t s_RandomIndex = std::rand() % m_RepositoryProps.size();
-    auto s_PropPair = GetRepositoryPropFromIndex(s_RandomIndex);
+    const size_t s_RandomIndex = m_Distribution(m_RandomGenerator);
+    const auto& s_PropPair = m_RepositoryProps[s_RandomIndex];
 
     auto s_LocalHitman = SDK()->GetLocalPlayer();
     if (!s_LocalHitman) {
@@ -275,7 +259,7 @@ void RandomItems::GiveRandomItem()
         s_ItemSpawner->m_rMainItemKey.m_pInterfaceRef = s_ItemRepoKey.QueryInterface<ZItemRepositoryKeyEntity>();
         s_ItemSpawner->m_rMainItemKey.m_pInterfaceRef->m_RepositoryId = s_PropPair.second;
         s_ItemSpawner->m_bUsePlacementAttach = false;
-        s_ItemSpawner->m_eDisposalTypeOverwrite = EDisposalType::DISPOSAL_HIDE;
+        s_ItemSpawner->m_eDisposalTypeOverwrite = EDisposalType::DISPOSAL_DESTROY;
         s_ItemSpawner->SetWorldMatrix(s_HitmanSpatial->GetWorldMatrix());
 
         Functions::ZItemSpawner_RequestContentLoad->Call(s_ItemSpawner);
