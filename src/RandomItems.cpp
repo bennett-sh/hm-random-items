@@ -212,6 +212,7 @@ void RandomItems::GiveRandomItem()
     }
 
     if(m_SpawnInWorld) {
+        Logger::Info("Spawning in world: {}", s_PropPair.first);
         ZSpatialEntity* s_HitmanSpatial = s_LocalHitman.m_ref.QueryInterface<ZSpatialEntity>();
 
         const auto s_Scene = Globals::Hitman5Module->m_pEntitySceneContext->m_pScene;
@@ -263,6 +264,7 @@ void RandomItems::GiveRandomItem()
 
         Functions::ZItemSpawner_RequestContentLoad->Call(s_ItemSpawner);
     }  else {
+        Logger::Info("Adding to inventory: {} {}", s_PropPair.first, s_PropPair.second.ToString());
         const TArray<TEntityRef<ZCharacterSubcontroller>>* s_Controllers = &s_LocalHitman.m_pInterfaceRef->m_pCharacter.m_pInterfaceRef->m_rSubcontrollerContainer.m_pInterfaceRef->m_aReferencedControllers;
         auto* s_Inventory = static_cast<ZCharacterSubcontrollerInventory*>(s_Controllers->operator[](6).m_pInterfaceRef);
 
